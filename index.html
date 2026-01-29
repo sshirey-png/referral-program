@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Referral Program | FirstLine Schools</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Open Sans', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        'fls-orange': '#e47727',
+                        'fls-orange-dark': '#c9621c',
+                        'fls-navy': '#002f60',
+                        'fls-blue': '#094aad',
+                        'fls-light-blue': '#e8f4f8',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.2s ease-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Open Sans', system-ui, -apple-system, sans-serif;
+        }
+
+        .status-submitted { background-color: #fef3c7; color: #92400e; }
+        .status-under-review { background-color: #dbeafe; color: #1e40af; }
+        .status-candidate-applied { background-color: #e0e7ff; color: #3730a3; }
+        .status-interviewing { background-color: #fae8ff; color: #86198f; }
+        .status-hired { background-color: #dcfce7; color: #166534; }
+        .status-eligible { background-color: #bbf7d0; color: #15803d; }
+        .status-paid { background-color: #22c55e; color: white; }
+        .status-not-hired { background-color: #fee2e2; color: #991b1b; }
+        .status-candidate-left { background-color: #fecaca; color: #b91c1c; }
+        .status-ineligible { background-color: #f3f4f6; color: #6b7280; }
+
+        .loader {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #e47727;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-fls-navy border-b border-fls-navy">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-4">
+                    <img src="https://firstlineschools.org/wp-content/uploads/2020/08/FLS-Logo_v2019_Color.png" alt="FirstLine Schools" class="h-10 bg-white rounded px-2 py-1">
+                    <div>
+                        <h1 class="text-lg font-semibold text-white">Staff Referral Program</h1>
+                        <p class="text-xs text-orange-200">Refer great candidates, earn rewards</p>
+                    </div>
+                </div>
+                <div id="authSection" class="flex items-center gap-3">
+                    <a href="/login" id="loginBtn" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white hover:bg-fls-blue rounded-lg transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                        </svg>
+                        Admin Login
+                    </a>
+                    <div id="userInfo" class="hidden items-center gap-3">
+                        <span id="userName" class="text-sm text-white"></span>
+                        <a href="/logout" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white hover:bg-fls-blue rounded-lg transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                            Sign Out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Staff View -->
+        <div id="staffView">
+            <!-- Hero Section -->
+            <section class="bg-white rounded-xl shadow-md p-8 mb-8">
+                <h1 class="text-3xl font-bold text-fls-navy mb-4 text-center">
+                    Help us build an amazing team and earn rewards!
+                </h1>
+                <p class="text-gray-600 text-center mb-8 max-w-2xl mx-auto">
+                    Know someone who would be a great addition to FirstLine Schools?
+                    Refer them and earn a bonus when they're hired and complete 60 days!
+                </p>
+
+                <!-- Bonus Cards -->
+                <div class="flex flex-col sm:flex-row justify-center gap-6 mb-8">
+                    <div class="bg-fls-light-blue border-2 border-fls-navy rounded-xl p-6 text-center w-full sm:w-64">
+                        <div class="text-lg font-semibold text-fls-navy mb-2">Lead Teacher Positions</div>
+                        <div class="text-4xl font-bold text-fls-orange mb-2">$500</div>
+                        <div class="text-sm text-gray-600">Paid after 60 days</div>
+                    </div>
+                    <div class="bg-fls-light-blue border-2 border-fls-navy rounded-xl p-6 text-center w-full sm:w-64">
+                        <div class="text-lg font-semibold text-fls-navy mb-2">All Other Positions</div>
+                        <div class="text-4xl font-bold text-fls-orange mb-2">$300</div>
+                        <div class="text-sm text-gray-600">Paid after 60 days</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- How It Works -->
+            <section class="bg-white rounded-xl shadow-md p-8 mb-8">
+                <h2 class="text-2xl font-bold text-fls-navy mb-6 text-center">How It Works</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-fls-orange text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3">1</div>
+                        <h3 class="font-semibold text-fls-navy mb-2">Find a Candidate</h3>
+                        <p class="text-sm text-gray-600">Think of someone who would be great at FirstLine</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-fls-orange text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3">2</div>
+                        <h3 class="font-semibold text-fls-navy mb-2">They Apply</h3>
+                        <p class="text-sm text-gray-600">Have them apply and list YOU as their referrer</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-fls-orange text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3">3</div>
+                        <h3 class="font-semibold text-fls-navy mb-2">Submit Here</h3>
+                        <p class="text-sm text-gray-600">Fill out the referral form below</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-fls-orange text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3">4</div>
+                        <h3 class="font-semibold text-fls-navy mb-2">Get Paid!</h3>
+                        <p class="text-sm text-gray-600">Receive your bonus after they complete 60 days</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Referral Form -->
+            <section class="bg-white rounded-xl shadow-md p-8 mb-8">
+                <h2 class="text-2xl font-bold text-fls-navy mb-6">Submit a Referral</h2>
+
+                <!-- Success Message -->
+                <div id="successMessage" class="hidden bg-green-100 border border-green-400 text-green-700 px-6 py-4 rounded-lg mb-6 fade-in">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <div>
+                            <div class="font-semibold">Referral Submitted Successfully!</div>
+                            <div>Your referral ID is: <span id="successReferralId" class="font-mono font-bold"></span></div>
+                            <div class="text-sm mt-1">Potential bonus: <span id="successBonus" class="font-semibold"></span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg mb-6">
+                    <span id="errorText"></span>
+                </div>
+
+                <form id="referralForm" class="space-y-8">
+                    <!-- Your Information Section -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-fls-navy mb-4 pb-2 border-b">Your Information</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Your Email *</label>
+                                <input type="email" name="referrer_email" id="referrerEmail" required
+                                    placeholder="youremail@firstlineschools.org"
+                                    onblur="autoFillFromEmail()"
+                                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange">
+                                <p class="text-xs text-gray-500 mt-1">Enter your email to auto-fill your info if you've submitted before</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Your Name *</label>
+                                <input type="text" name="referrer_name" id="referrerName" required
+                                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Your School/Department *</label>
+                                <select name="referrer_school" required
+                                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange">
+                                    <option value="">Select your school/department...</option>
+                                    <option value="Arthur Ashe Charter School">Arthur Ashe Charter School</option>
+                                    <option value="Langston Hughes Academy">Langston Hughes Academy</option>
+                                    <option value="Phillis Wheatley Community School">Phillis Wheatley Community School</option>
+                                    <option value="Samuel J. Green Charter School">Samuel J. Green Charter School</option>
+                                    <option value="Network Office">Network Office</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Candidate Information Section -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-fls-navy mb-4 pb-2 border-b">Candidate Information</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Candidate Name *</label>
+                                <input type="text" name="candidate_name" required
+                                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Candidate Email *</label>
+                                <input type="email" name="candidate_email" required
+                                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Candidate Phone</label>
+                                <input type="tel" name="candidate_phone"
+                                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Position *</label>
+                                <input type="text" name="position" required placeholder="e.g., 3rd Grade Teacher, Office Manager"
+                                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Position Type *</label>
+                                <div class="flex gap-6">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="position_type" value="Lead Teacher" required
+                                            class="w-4 h-4 text-fls-orange focus:ring-fls-orange">
+                                        <span>Lead Teacher ($500 bonus)</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="position_type" value="Other" required
+                                            class="w-4 h-4 text-fls-orange focus:ring-fls-orange">
+                                        <span>Other Position ($300 bonus)</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Details Section -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-fls-navy mb-4 pb-2 border-b">Additional Details</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">How do you know this candidate? *</label>
+                                <select name="relationship" required
+                                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange">
+                                    <option value="">Select...</option>
+                                    <option value="Former colleague">Former colleague</option>
+                                    <option value="Friend">Friend</option>
+                                    <option value="Family member">Family member</option>
+                                    <option value="Professional network">Professional network</option>
+                                    <option value="Alumni connection">Alumni connection</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Has the candidate already applied?</label>
+                                <div class="flex gap-6">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="already_applied" value="Yes"
+                                            class="w-4 h-4 text-fls-orange focus:ring-fls-orange">
+                                        <span>Yes</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="already_applied" value="Not yet" checked
+                                            class="w-4 h-4 text-fls-orange focus:ring-fls-orange">
+                                        <span>Not yet</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Additional Notes</label>
+                                <textarea name="notes" rows="3" placeholder="Any additional information about the candidate..."
+                                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex justify-center">
+                        <button type="submit" id="submitBtn"
+                            class="bg-fls-orange hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-semibold text-lg transition flex items-center gap-2">
+                            <span>Submit Referral</span>
+                            <div id="submitLoader" class="loader hidden"></div>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- My Referrals Section -->
+            <section class="bg-white rounded-xl shadow-md p-8">
+                <h2 class="text-2xl font-bold text-fls-navy mb-6">My Referrals</h2>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Look up your referrals by email</label>
+                    <div class="flex gap-2">
+                        <input type="email" id="lookupEmail" placeholder="youremail@firstlineschools.org"
+                            class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange">
+                        <button type="button" onclick="lookupReferrals()"
+                            class="bg-fls-navy hover:bg-blue-900 text-white px-6 py-2 rounded-lg font-medium transition flex items-center gap-2">
+                            <span>Look Up</span>
+                            <div id="lookupLoader" class="loader hidden"></div>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="lookupResults" class="hidden">
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-fls-light-blue rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-fls-navy" id="totalReferrals">0</div>
+                            <div class="text-sm text-gray-600">Total Referrals</div>
+                        </div>
+                        <div class="bg-yellow-100 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-yellow-700" id="pendingBonus">$0</div>
+                            <div class="text-sm text-gray-600">Pending Bonuses</div>
+                        </div>
+                        <div class="bg-green-100 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-green-700" id="paidBonus">$0</div>
+                            <div class="text-sm text-gray-600">Bonuses Paid</div>
+                        </div>
+                    </div>
+
+                    <!-- Referrals Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-700">Date</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-700">Candidate</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-700">Position</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-700">Bonus</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="myReferralsTable">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="noReferrals" class="hidden text-center text-gray-500 py-8">
+                        No referrals found for this email address.
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Admin View -->
+        <div id="adminView" class="hidden">
+            <!-- Admin Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-fls-navy">Referral Program Admin</h1>
+                    <p class="text-gray-600">Manage and track all staff referrals</p>
+                </div>
+                <button onclick="showStaffView()" class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition">
+                    View Staff Page
+                </button>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="text-3xl font-bold text-fls-navy" id="statTotal">0</div>
+                    <div class="text-sm text-gray-600">Total Referrals</div>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="text-3xl font-bold text-yellow-600" id="statPending">0</div>
+                    <div class="text-sm text-gray-600">Pending Review</div>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="text-3xl font-bold text-purple-600" id="statProgress">0</div>
+                    <div class="text-sm text-gray-600">In Progress</div>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="text-3xl font-bold text-green-600" id="statBonusesPaid">$0</div>
+                    <div class="text-sm text-gray-600">Bonuses Paid</div>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="text-3xl font-bold text-fls-orange" id="statBonusesPending">$0</div>
+                    <div class="text-sm text-gray-600">Bonuses Pending</div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white rounded-xl shadow p-4 mb-6">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="flex-1">
+                        <input type="text" id="adminSearch" placeholder="Search by name or email..."
+                            onkeyup="filterReferrals()"
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange">
+                    </div>
+                    <div>
+                        <select id="statusFilter" onchange="filterReferrals()"
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange">
+                            <option value="">All Statuses</option>
+                            <option value="Submitted">Submitted</option>
+                            <option value="Under Review">Under Review</option>
+                            <option value="Candidate Applied">Candidate Applied</option>
+                            <option value="Interviewing">Interviewing</option>
+                            <option value="Hired">Hired</option>
+                            <option value="Eligible">Eligible</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Not Hired">Not Hired</option>
+                            <option value="Candidate Left">Candidate Left</option>
+                            <option value="Ineligible">Ineligible</option>
+                        </select>
+                    </div>
+                    <button onclick="loadAdminData()" class="bg-fls-navy hover:bg-blue-900 text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Admin Referrals Table -->
+            <div class="bg-white rounded-xl shadow overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-200" onclick="sortTable('submitted_at')">Date</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Referrer</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Candidate</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Position</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Bonus</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-200" onclick="sortTable('status')">Status</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminReferralsTable">
+                        </tbody>
+                    </table>
+                </div>
+                <div id="adminLoading" class="text-center py-8 text-gray-500">
+                    <div class="loader mx-auto mb-2"></div>
+                    Loading referrals...
+                </div>
+                <div id="adminNoData" class="hidden text-center py-8 text-gray-500">
+                    No referrals found.
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold text-fls-navy">Edit Referral</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <input type="hidden" id="editReferralId">
+
+                <!-- Referral Info (Read-only) -->
+                <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+                    <div>
+                        <span class="text-gray-500">Referral ID:</span>
+                        <span id="modalReferralId" class="font-mono font-semibold"></span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Submitted:</span>
+                        <span id="modalSubmittedAt"></span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Referrer:</span>
+                        <span id="modalReferrer"></span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">School:</span>
+                        <span id="modalSchool"></span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Candidate:</span>
+                        <span id="modalCandidate"></span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Email:</span>
+                        <span id="modalCandidateEmail"></span>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-gray-500">Relationship:</span>
+                        <span id="modalRelationship"></span>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-gray-500">Notes:</span>
+                        <span id="modalNotes" class="text-gray-700"></span>
+                    </div>
+                </div>
+
+                <hr class="my-6">
+
+                <!-- Editable Fields -->
+                <div class="space-y-4">
+                    <!-- Position & Bonus (Editable) -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                            <input type="text" id="editPosition"
+                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Position Type</label>
+                            <select id="editPositionType" onchange="updateBonusAmount()"
+                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange">
+                                <option value="Lead Teacher">Lead Teacher ($500)</option>
+                                <option value="Other">Other ($300)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Bonus Amount</label>
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">$</span>
+                            <input type="number" id="editBonusAmount" min="0" step="50"
+                                class="w-32 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange text-lg font-semibold">
+                            <span class="text-sm text-gray-500">(Auto-updates based on position type)</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select id="editStatus"
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange">
+                            <option value="Submitted">Submitted</option>
+                            <option value="Under Review">Under Review</option>
+                            <option value="Candidate Applied">Candidate Applied</option>
+                            <option value="Interviewing">Interviewing</option>
+                            <option value="Hired">Hired</option>
+                            <option value="Eligible">Eligible</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Not Hired">Not Hired</option>
+                            <option value="Candidate Left">Candidate Left</option>
+                            <option value="Ineligible">Ineligible</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Hire Date</label>
+                        <input type="date" id="editHireDate"
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                        <div>
+                            <span class="font-medium">60-Day Date:</span>
+                            <span id="modal60Day">-</span>
+                        </div>
+                        <div>
+                            <span class="font-medium">Payout Month:</span>
+                            <span id="modalPayoutMonth">-</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Paid Date</label>
+                        <input type="date" id="editPaidDate"
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Admin Notes</label>
+                        <textarea id="editAdminNotes" rows="3"
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange"></textarea>
+                    </div>
+                </div>
+
+                <!-- Status History -->
+                <div class="mt-6 text-sm text-gray-500">
+                    <span class="font-medium">Last Updated:</span>
+                    <span id="modalLastUpdated"></span>
+                    by <span id="modalUpdatedBy"></span>
+                </div>
+            </div>
+            <div class="p-6 border-t bg-gray-50 flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100 transition">
+                    Cancel
+                </button>
+                <button onclick="saveReferral()" id="saveBtn"
+                    class="bg-fls-orange hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium transition flex items-center gap-2">
+                    <span>Save Changes</span>
+                    <div id="saveLoader" class="loader hidden"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-fls-navy text-white py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm opacity-80">
+            <p>FirstLine Schools Staff Referral Program</p>
+            <p class="mt-1">Questions? Contact <a href="mailto:talent@firstlineschools.org" class="underline">talent@firstlineschools.org</a></p>
+        </div>
+    </footer>
+
+    <script>
+        // Global state
+        let allReferrals = [];
+        let currentSort = { field: 'submitted_at', direction: 'desc' };
+        let isAdmin = false;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuthStatus();
+
+            // Check URL params for admin view
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('admin') === 'true' && isAdmin) {
+                showAdminView();
+            }
+        });
+
+        // Auth functions
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch('/api/auth/status');
+                const data = await response.json();
+
+                if (data.authenticated) {
+                    document.getElementById('loginBtn').classList.add('hidden');
+                    document.getElementById('userInfo').classList.remove('hidden');
+                    document.getElementById('userInfo').classList.add('flex');
+                    document.getElementById('userName').textContent = data.user.name || data.user.email;
+                    isAdmin = data.is_admin;
+                } else {
+                    document.getElementById('loginBtn').classList.remove('hidden');
+                    document.getElementById('userInfo').classList.add('hidden');
+                    isAdmin = false;
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+            }
+        }
+
+        // View switching
+        function showAdminView() {
+            if (!isAdmin) {
+                alert('Admin access required');
+                return;
+            }
+            document.getElementById('staffView').classList.add('hidden');
+            document.getElementById('adminView').classList.remove('hidden');
+            loadAdminData();
+        }
+
+        function showStaffView() {
+            document.getElementById('adminView').classList.add('hidden');
+            document.getElementById('staffView').classList.remove('hidden');
+        }
+
+        // Auto-fill staff info when email is entered
+        async function autoFillFromEmail() {
+            const email = document.getElementById('referrerEmail').value.trim();
+            if (!email) return;
+
+            // Only auto-fill if name is empty
+            const nameField = document.getElementById('referrerName');
+            if (nameField.value.trim()) return;
+
+            try {
+                const response = await fetch(`/api/staff/lookup?email=${encodeURIComponent(email)}`);
+                const data = await response.json();
+
+                if (data.found) {
+                    nameField.value = data.name;
+                    document.querySelector('[name="referrer_school"]').value = data.school;
+                }
+            } catch (error) {
+                console.error('Auto-fill failed:', error);
+            }
+        }
+
+        // Submit referral form
+        document.getElementById('referralForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            const submitBtn = document.getElementById('submitBtn');
+            const loader = document.getElementById('submitLoader');
+
+            // Show loading state
+            submitBtn.disabled = true;
+            loader.classList.remove('hidden');
+
+            // Hide previous messages
+            document.getElementById('successMessage').classList.add('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+
+            // Collect form data
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
+            });
+
+            try {
+                const response = await fetch('/api/referrals', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    document.getElementById('successReferralId').textContent = result.referral_id;
+                    document.getElementById('successBonus').textContent = '$' + result.bonus_amount;
+                    document.getElementById('successMessage').classList.remove('hidden');
+                    form.reset();
+                    window.scrollTo({ top: document.getElementById('successMessage').offsetTop - 100, behavior: 'smooth' });
+                } else {
+                    document.getElementById('errorText').textContent = result.error || 'Failed to submit referral';
+                    document.getElementById('errorMessage').classList.remove('hidden');
+                }
+            } catch (error) {
+                document.getElementById('errorText').textContent = 'Network error. Please try again.';
+                document.getElementById('errorMessage').classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                loader.classList.add('hidden');
+            }
+        });
+
+        // Lookup user referrals
+        async function lookupReferrals() {
+            const email = document.getElementById('lookupEmail').value.trim();
+            if (!email) return;
+
+            const loader = document.getElementById('lookupLoader');
+            loader.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`/api/referrals/lookup?email=${encodeURIComponent(email)}`);
+                const data = await response.json();
+
+                document.getElementById('lookupResults').classList.remove('hidden');
+                document.getElementById('totalReferrals').textContent = data.referrals.length;
+                document.getElementById('pendingBonus').textContent = '$' + data.total_pending;
+                document.getElementById('paidBonus').textContent = '$' + data.total_paid;
+
+                const tbody = document.getElementById('myReferralsTable');
+                tbody.innerHTML = '';
+
+                if (data.referrals.length === 0) {
+                    document.getElementById('noReferrals').classList.remove('hidden');
+                    tbody.parentElement.classList.add('hidden');
+                } else {
+                    document.getElementById('noReferrals').classList.add('hidden');
+                    tbody.parentElement.classList.remove('hidden');
+
+                    data.referrals.forEach(ref => {
+                        const date = ref.submitted_at ? new Date(ref.submitted_at).toLocaleDateString() : '-';
+                        const statusClass = getStatusClass(ref.status);
+
+                        tbody.innerHTML += `
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="px-4 py-3">${date}</td>
+                                <td class="px-4 py-3">${escapeHtml(ref.candidate_name)}</td>
+                                <td class="px-4 py-3">${escapeHtml(ref.position)}</td>
+                                <td class="px-4 py-3 font-semibold">$${ref.bonus_amount}</td>
+                                <td class="px-4 py-3">
+                                    <span class="px-2 py-1 rounded-full text-xs font-medium ${statusClass}">${escapeHtml(ref.status)}</span>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (error) {
+                console.error('Lookup failed:', error);
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }
+
+        // Admin functions
+        async function loadAdminData() {
+            document.getElementById('adminLoading').classList.remove('hidden');
+            document.getElementById('adminNoData').classList.add('hidden');
+
+            try {
+                // Load stats and referrals in parallel
+                const [statsRes, referralsRes] = await Promise.all([
+                    fetch('/api/admin/stats'),
+                    fetch('/api/admin/referrals')
+                ]);
+
+                const stats = await statsRes.json();
+                const referralsData = await referralsRes.json();
+
+                // Update stats
+                document.getElementById('statTotal').textContent = stats.total;
+                document.getElementById('statPending').textContent = stats.pending_review;
+                document.getElementById('statProgress').textContent = stats.in_progress;
+                document.getElementById('statBonusesPaid').textContent = '$' + stats.bonuses_paid;
+                document.getElementById('statBonusesPending').textContent = '$' + stats.bonuses_pending;
+
+                // Store referrals
+                allReferrals = referralsData.referrals;
+                filterReferrals();
+            } catch (error) {
+                console.error('Failed to load admin data:', error);
+                if (error.message.includes('401') || error.message.includes('403')) {
+                    alert('Admin access required. Please log in.');
+                    window.location.href = '/login';
+                }
+            } finally {
+                document.getElementById('adminLoading').classList.add('hidden');
+            }
+        }
+
+        function filterReferrals() {
+            const searchTerm = document.getElementById('adminSearch').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            let filtered = allReferrals.filter(ref => {
+                const matchesSearch = !searchTerm ||
+                    ref.referrer_name?.toLowerCase().includes(searchTerm) ||
+                    ref.referrer_email?.toLowerCase().includes(searchTerm) ||
+                    ref.candidate_name?.toLowerCase().includes(searchTerm) ||
+                    ref.candidate_email?.toLowerCase().includes(searchTerm);
+
+                const matchesStatus = !statusFilter || ref.status === statusFilter;
+
+                return matchesSearch && matchesStatus;
+            });
+
+            // Sort
+            filtered.sort((a, b) => {
+                let aVal = a[currentSort.field] || '';
+                let bVal = b[currentSort.field] || '';
+
+                if (currentSort.field === 'submitted_at') {
+                    aVal = new Date(aVal) || new Date(0);
+                    bVal = new Date(bVal) || new Date(0);
+                }
+
+                if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+                if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            renderAdminTable(filtered);
+        }
+
+        function sortTable(field) {
+            if (currentSort.field === field) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.field = field;
+                currentSort.direction = 'desc';
+            }
+            filterReferrals();
+        }
+
+        function renderAdminTable(referrals) {
+            const tbody = document.getElementById('adminReferralsTable');
+            tbody.innerHTML = '';
+
+            if (referrals.length === 0) {
+                document.getElementById('adminNoData').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('adminNoData').classList.add('hidden');
+
+            referrals.forEach(ref => {
+                const date = ref.submitted_at ? new Date(ref.submitted_at).toLocaleDateString() : '-';
+                const statusClass = getStatusClass(ref.status);
+
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm">${date}</td>
+                        <td class="px-4 py-3">
+                            <div class="font-medium">${escapeHtml(ref.referrer_name)}</div>
+                            <div class="text-xs text-gray-500">${escapeHtml(ref.referrer_email)}</div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="font-medium">${escapeHtml(ref.candidate_name)}</div>
+                            <div class="text-xs text-gray-500">${escapeHtml(ref.candidate_email)}</div>
+                        </td>
+                        <td class="px-4 py-3 text-sm">${escapeHtml(ref.position)}</td>
+                        <td class="px-4 py-3 font-semibold">$${ref.bonus_amount}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded-full text-xs font-medium ${statusClass}">${escapeHtml(ref.status)}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <button onclick="openEditModal('${ref.referral_id}')"
+                                class="text-fls-navy hover:text-blue-700 font-medium text-sm">
+                                Edit
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Modal functions
+        function openEditModal(referralId) {
+            const ref = allReferrals.find(r => r.referral_id === referralId);
+            if (!ref) return;
+
+            document.getElementById('editReferralId').value = referralId;
+            document.getElementById('modalReferralId').textContent = referralId;
+            document.getElementById('modalSubmittedAt').textContent = ref.submitted_at ? new Date(ref.submitted_at).toLocaleString() : '-';
+            document.getElementById('modalReferrer').textContent = ref.referrer_name;
+            document.getElementById('modalSchool').textContent = ref.referrer_school;
+            document.getElementById('modalCandidate').textContent = ref.candidate_name;
+            document.getElementById('modalCandidateEmail').textContent = ref.candidate_email;
+            document.getElementById('modalRelationship').textContent = ref.relationship;
+            document.getElementById('modalNotes').textContent = ref.notes || '-';
+            document.getElementById('modalLastUpdated').textContent = ref.status_updated_at ? new Date(ref.status_updated_at).toLocaleString() : '-';
+            document.getElementById('modalUpdatedBy').textContent = ref.status_updated_by || '-';
+
+            // Editable fields
+            document.getElementById('editPosition').value = ref.position || '';
+            document.getElementById('editPositionType').value = ref.position_type || 'Other';
+            document.getElementById('editBonusAmount').value = ref.bonus_amount || 300;
+            document.getElementById('editStatus').value = ref.status;
+            document.getElementById('editHireDate').value = ref.hire_date || '';
+            document.getElementById('editPaidDate').value = ref.paid_date || '';
+            document.getElementById('editAdminNotes').value = ref.admin_notes || '';
+
+            document.getElementById('modal60Day').textContent = ref.sixty_day_date || '-';
+            document.getElementById('modalPayoutMonth').textContent = ref.payout_month || '-';
+
+            document.getElementById('editModal').classList.remove('hidden');
+            document.getElementById('editModal').classList.add('flex');
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.add('hidden');
+            document.getElementById('editModal').classList.remove('flex');
+        }
+
+        async function saveReferral() {
+            const referralId = document.getElementById('editReferralId').value;
+            const saveBtn = document.getElementById('saveBtn');
+            const loader = document.getElementById('saveLoader');
+
+            saveBtn.disabled = true;
+            loader.classList.remove('hidden');
+
+            const updates = {
+                position: document.getElementById('editPosition').value,
+                position_type: document.getElementById('editPositionType').value,
+                bonus_amount: parseInt(document.getElementById('editBonusAmount').value) || 300,
+                status: document.getElementById('editStatus').value,
+                hire_date: document.getElementById('editHireDate').value,
+                paid_date: document.getElementById('editPaidDate').value,
+                admin_notes: document.getElementById('editAdminNotes').value
+            };
+
+            try {
+                const response = await fetch(`/api/admin/referrals/${referralId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updates)
+                });
+
+                if (response.ok) {
+                    closeModal();
+                    loadAdminData();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Failed to save changes');
+                }
+            } catch (error) {
+                alert('Network error. Please try again.');
+            } finally {
+                saveBtn.disabled = false;
+                loader.classList.add('hidden');
+            }
+        }
+
+        // Update bonus amount when position type changes
+        function updateBonusAmount() {
+            const positionType = document.getElementById('editPositionType').value;
+            const bonusAmount = positionType === 'Lead Teacher' ? 500 : 300;
+            document.getElementById('editBonusAmount').value = bonusAmount;
+        }
+
+        // Utility functions
+        function getStatusClass(status) {
+            const classes = {
+                'Submitted': 'status-submitted',
+                'Under Review': 'status-under-review',
+                'Candidate Applied': 'status-candidate-applied',
+                'Interviewing': 'status-interviewing',
+                'Hired': 'status-hired',
+                'Eligible': 'status-eligible',
+                'Paid': 'status-paid',
+                'Not Hired': 'status-not-hired',
+                'Candidate Left': 'status-candidate-left',
+                'Ineligible': 'status-ineligible'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-700';
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Close modal on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Close modal on backdrop click
+        document.getElementById('editModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('editModal')) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
