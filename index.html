@@ -53,6 +53,7 @@
         .status-eligible { background-color: #bbf7d0; color: #15803d; }
         .status-paid { background-color: #22c55e; color: white; }
         .status-not-hired { background-color: #fee2e2; color: #991b1b; }
+        .status-withdrawn { background-color: #fed7aa; color: #c2410c; }
         .status-candidate-left { background-color: #fecaca; color: #b91c1c; }
         .status-ineligible { background-color: #f3f4f6; color: #6b7280; }
 
@@ -451,7 +452,8 @@
                             <option value="Eligible">Eligible</option>
                             <option value="Paid">Paid</option>
                             <option value="Not Hired">Not Hired</option>
-                            <option value="Candidate Left">Candidate Left</option>
+                            <option value="Withdrawn/Non-responsive">Withdrawn/Non-responsive</option>
+                            <option value="Candidate Left before 60 Days">Candidate Left before 60 Days</option>
                             <option value="Ineligible">Ineligible</option>
                         </select>
                     </div>
@@ -585,7 +587,8 @@
                             <option value="Eligible">Eligible</option>
                             <option value="Paid">Paid</option>
                             <option value="Not Hired">Not Hired</option>
-                            <option value="Candidate Left">Candidate Left</option>
+                            <option value="Withdrawn/Non-responsive">Withdrawn/Non-responsive</option>
+                            <option value="Candidate Left before 60 Days">Candidate Left before 60 Days</option>
                             <option value="Ineligible">Ineligible</option>
                         </select>
                     </div>
@@ -1041,7 +1044,8 @@
                 'Eligible': 'status-eligible',
                 'Paid': 'status-paid',
                 'Not Hired': 'status-not-hired',
-                'Candidate Left': 'status-candidate-left',
+                'Withdrawn/Non-responsive': 'status-withdrawn',
+                'Candidate Left before 60 Days': 'status-candidate-left',
                 'Ineligible': 'status-ineligible'
             };
             return classes[status] || 'bg-gray-100 text-gray-700';

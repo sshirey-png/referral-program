@@ -64,7 +64,8 @@ STATUS_VALUES = [
     'Eligible',
     'Paid',
     'Not Hired',
-    'Candidate Left',
+    'Withdrawn/Non-responsive',
+    'Candidate Left before 60 Days',
     'Ineligible'
 ]
 
@@ -206,7 +207,8 @@ def send_status_update(referral, old_status, new_status, updated_by):
         'Eligible': f"Your referral bonus of ${referral['bonus_amount']} is now eligible for payout! It will be processed soon.",
         'Paid': f"Your ${referral['bonus_amount']} referral bonus has been paid! Thank you for helping us build a great team.",
         'Not Hired': f"Unfortunately, {referral['candidate_name']} was not selected for this position. Thank you for your referral.",
-        'Candidate Left': f"Unfortunately, {referral['candidate_name']} left before completing 60 days. The referral bonus is no longer eligible.",
+        'Withdrawn/Non-responsive': f"{referral['candidate_name']} has withdrawn or is no longer responsive. Thank you for your referral.",
+        'Candidate Left before 60 Days': f"Unfortunately, {referral['candidate_name']} left before completing 60 days. The referral bonus is no longer eligible.",
         'Ineligible': "This referral has been marked as ineligible. Please contact Talent if you have questions."
     }
 
@@ -215,7 +217,7 @@ def send_status_update(referral, old_status, new_status, updated_by):
     # Choose color based on status
     if new_status in ['Hired', 'Eligible', 'Paid']:
         status_color = '#22c55e'  # Green
-    elif new_status in ['Not Hired', 'Candidate Left', 'Ineligible']:
+    elif new_status in ['Not Hired', 'Withdrawn/Non-responsive', 'Candidate Left before 60 Days', 'Ineligible']:
         status_color = '#ef4444'  # Red
     else:
         status_color = '#e47727'  # Orange
@@ -799,7 +801,7 @@ def get_stats():
         if r.get('status') in ['Hired', 'Eligible']
     )
 
-    not_hired = len([r for r in referrals if r.get('status') in ['Not Hired', 'Candidate Left', 'Ineligible']])
+    not_hired = len([r for r in referrals if r.get('status') in ['Not Hired', 'Candidate Left before 60 Days', 'Ineligible']])
 
     return jsonify({
         'total': total,
