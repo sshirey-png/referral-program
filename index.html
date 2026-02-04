@@ -457,6 +457,11 @@
                             <option value="Ineligible">Ineligible</option>
                         </select>
                     </div>
+                    <label class="flex items-center gap-2 cursor-pointer whitespace-nowrap px-2">
+                        <input type="checkbox" id="showArchived" onchange="filterReferrals()"
+                            class="w-4 h-4 text-fls-orange focus:ring-fls-orange rounded">
+                        <span class="text-sm text-gray-700">Show Archived</span>
+                    </label>
                     <button onclick="loadAdminData()" class="bg-fls-navy hover:bg-blue-900 text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
@@ -626,15 +631,27 @@
                     by <span id="modalUpdatedBy"></span>
                 </div>
             </div>
-            <div class="p-6 border-t bg-gray-50 flex justify-end gap-3">
-                <button onclick="closeModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100 transition">
-                    Cancel
-                </button>
-                <button onclick="saveReferral()" id="saveBtn"
-                    class="bg-fls-orange hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium transition flex items-center gap-2">
-                    <span>Save Changes</span>
-                    <div id="saveLoader" class="loader hidden"></div>
-                </button>
+            <div class="p-6 border-t bg-gray-50 flex justify-between">
+                <div class="flex gap-2">
+                    <button onclick="toggleArchiveReferral()" id="archiveBtn"
+                        class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium text-sm transition">
+                        Archive
+                    </button>
+                    <button onclick="deleteReferral()" id="deleteBtn"
+                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-sm transition">
+                        Delete
+                    </button>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100 transition">
+                        Cancel
+                    </button>
+                    <button onclick="saveReferral()" id="saveBtn"
+                        class="bg-fls-orange hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium transition flex items-center gap-2">
+                        <span>Save Changes</span>
+                        <div id="saveLoader" class="loader hidden"></div>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -865,6 +882,7 @@
         function filterReferrals() {
             const searchTerm = document.getElementById('adminSearch').value.toLowerCase();
             const statusFilter = document.getElementById('statusFilter').value;
+            const showArchived = document.getElementById('showArchived').checked;
 
             let filtered = allReferrals.filter(ref => {
                 const matchesSearch = !searchTerm ||
@@ -875,7 +893,9 @@
 
                 const matchesStatus = !statusFilter || ref.status === statusFilter;
 
-                return matchesSearch && matchesStatus;
+                const matchesArchived = showArchived || !ref.is_archived;
+
+                return matchesSearch && matchesStatus && matchesArchived;
             });
 
             // Sort
@@ -920,16 +940,18 @@
             referrals.forEach(ref => {
                 const date = ref.submitted_at ? new Date(ref.submitted_at).toLocaleDateString() : '-';
                 const statusClass = getStatusClass(ref.status);
+                const archivedClass = ref.is_archived ? 'opacity-50' : '';
+                const archivedBadge = ref.is_archived ? ' <span class="ml-1 px-1.5 py-0.5 bg-gray-200 text-gray-500 text-xs rounded">Archived</span>' : '';
 
                 tbody.innerHTML += `
-                    <tr class="border-b hover:bg-gray-50">
+                    <tr class="border-b hover:bg-gray-50 ${archivedClass}">
                         <td class="px-4 py-3 text-sm">${date}</td>
                         <td class="px-4 py-3">
                             <div class="font-medium">${escapeHtml(ref.referrer_name)}</div>
                             <div class="text-xs text-gray-500">${escapeHtml(ref.referrer_email)}</div>
                         </td>
                         <td class="px-4 py-3">
-                            <div class="font-medium">${escapeHtml(ref.candidate_name)}</div>
+                            <div class="font-medium">${escapeHtml(ref.candidate_name)}${archivedBadge}</div>
                             <div class="text-xs text-gray-500">${escapeHtml(ref.candidate_email)}</div>
                         </td>
                         <td class="px-4 py-3 text-sm">${escapeHtml(ref.position)}</td>
@@ -977,6 +999,16 @@
             document.getElementById('modal60Day').textContent = ref.sixty_day_date || '-';
             document.getElementById('modalPayoutMonth').textContent = ref.payout_month || '-';
 
+            // Update archive button label based on current state
+            const archiveBtn = document.getElementById('archiveBtn');
+            if (ref.is_archived) {
+                archiveBtn.textContent = 'Unarchive';
+                archiveBtn.className = 'px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm transition';
+            } else {
+                archiveBtn.textContent = 'Archive';
+                archiveBtn.className = 'px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium text-sm transition';
+            }
+
             document.getElementById('editModal').classList.remove('hidden');
             document.getElementById('editModal').classList.add('flex');
         }
@@ -1023,6 +1055,55 @@
             } finally {
                 saveBtn.disabled = false;
                 loader.classList.add('hidden');
+            }
+        }
+
+        // Archive / Unarchive toggle
+        async function toggleArchiveReferral() {
+            const referralId = document.getElementById('editReferralId').value;
+            const ref = allReferrals.find(r => r.referral_id === referralId);
+            if (!ref) return;
+
+            const action = ref.is_archived ? 'unarchive' : 'archive';
+            if (!confirm(`Are you sure you want to ${action} this referral?`)) return;
+
+            try {
+                const response = await fetch(`/api/admin/referrals/${referralId}/${action}`, {
+                    method: 'PATCH'
+                });
+
+                if (response.ok) {
+                    closeModal();
+                    loadAdminData();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || `Failed to ${action} referral`);
+                }
+            } catch (error) {
+                alert('Network error. Please try again.');
+            }
+        }
+
+        // Permanently delete a referral
+        async function deleteReferral() {
+            const referralId = document.getElementById('editReferralId').value;
+            if (!confirm('Are you sure you want to PERMANENTLY DELETE this referral? This cannot be undone.')) return;
+            if (!confirm('This is irreversible. Delete this referral?')) return;
+
+            try {
+                const response = await fetch(`/api/admin/referrals/${referralId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    closeModal();
+                    loadAdminData();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Failed to delete referral');
+                }
+            } catch (error) {
+                alert('Network error. Please try again.');
             }
         }
 

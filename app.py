@@ -72,6 +72,27 @@ STATUS_VALUES = [
 # BigQuery client
 bq_client = bigquery.Client(project=PROJECT_ID)
 
+
+def ensure_is_archived_column():
+    """One-time migration: add is_archived column if it doesn't exist."""
+    try:
+        full_table = f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
+        table_ref = bq_client.get_table(full_table)
+        existing_fields = [f.name for f in table_ref.schema]
+        if 'is_archived' not in existing_fields:
+            # Step 1: Add the column
+            bq_client.query(f"ALTER TABLE `{full_table}` ADD COLUMN is_archived BOOL").result()
+            # Step 2: Set default value
+            bq_client.query(f"ALTER TABLE `{full_table}` ALTER COLUMN is_archived SET DEFAULT FALSE").result()
+            # Step 3: Backfill existing rows
+            bq_client.query(f"UPDATE `{full_table}` SET is_archived = FALSE WHERE TRUE").result()
+            logger.info("Added is_archived column to referrals table")
+    except Exception as e:
+        logger.error(f"Migration error (is_archived): {e}")
+
+
+ensure_is_archived_column()
+
 # OAuth setup
 oauth = OAuth(app)
 if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
@@ -335,7 +356,8 @@ def row_to_dict(row):
         'sixty_day_date': row.sixty_day_date.isoformat() if row.sixty_day_date else '',
         'payout_month': row.payout_month or '',
         'paid_date': row.paid_date.isoformat() if row.paid_date else '',
-        'admin_notes': row.admin_notes or ''
+        'admin_notes': row.admin_notes or '',
+        'is_archived': bool(getattr(row, 'is_archived', False) or False)
     }
 
 
@@ -773,11 +795,81 @@ def update_referral_status(referral_id):
         return jsonify({'error': 'Server error'}), 500
 
 
+@app.route('/api/admin/referrals/<referral_id>', methods=['DELETE'])
+@require_admin
+def delete_referral(referral_id):
+    """Permanently delete a referral (admin only)."""
+    try:
+        query = f"""
+        DELETE FROM `{get_full_table_id()}`
+        WHERE referral_id = @referral_id
+        """
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("referral_id", "STRING", referral_id)
+            ]
+        )
+        result = bq_client.query(query, job_config=job_config).result()
+        logger.info(f"Deleted referral {referral_id}")
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error deleting referral: {e}")
+        return jsonify({'error': 'Server error'}), 500
+
+
+@app.route('/api/admin/referrals/<referral_id>/archive', methods=['PATCH'])
+@require_admin
+def archive_referral(referral_id):
+    """Archive a referral (admin only)."""
+    try:
+        query = f"""
+        UPDATE `{get_full_table_id()}`
+        SET is_archived = TRUE
+        WHERE referral_id = @referral_id
+        """
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("referral_id", "STRING", referral_id)
+            ]
+        )
+        bq_client.query(query, job_config=job_config).result()
+        logger.info(f"Archived referral {referral_id}")
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error archiving referral: {e}")
+        return jsonify({'error': 'Server error'}), 500
+
+
+@app.route('/api/admin/referrals/<referral_id>/unarchive', methods=['PATCH'])
+@require_admin
+def unarchive_referral(referral_id):
+    """Unarchive a referral (admin only)."""
+    try:
+        query = f"""
+        UPDATE `{get_full_table_id()}`
+        SET is_archived = FALSE
+        WHERE referral_id = @referral_id
+        """
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("referral_id", "STRING", referral_id)
+            ]
+        )
+        bq_client.query(query, job_config=job_config).result()
+        logger.info(f"Unarchived referral {referral_id}")
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error unarchiving referral: {e}")
+        return jsonify({'error': 'Server error'}), 500
+
+
 @app.route('/api/admin/stats', methods=['GET'])
 @require_admin
 def get_stats():
     """Get dashboard statistics (admin only)."""
-    referrals = read_all_referrals()
+    all_referrals = read_all_referrals()
+    # Exclude archived referrals from stats
+    referrals = [r for r in all_referrals if not r.get('is_archived')]
 
     total = len(referrals)
 
