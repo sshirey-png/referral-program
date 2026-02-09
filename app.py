@@ -43,6 +43,7 @@ SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
 TALENT_TEAM_EMAIL = 'talent@firstlineschools.org'
 HR_EMAIL = 'hr@firstlineschools.org'
+CPO_EMAIL = 'sshirey@firstlineschools.org'  # CC on new referrals and weekly updates
 
 # Admin users who can access the admin panel
 ADMIN_USERS = [
@@ -215,7 +216,7 @@ def send_new_referral_alert(referral):
         </div>
     </div>
     """
-    send_email(TALENT_TEAM_EMAIL, subject, html_body)
+    send_email(TALENT_TEAM_EMAIL, subject, html_body, cc_emails=[CPO_EMAIL])
 
 
 def send_status_update(referral, old_status, new_status, updated_by):
@@ -1065,7 +1066,7 @@ def send_weekly_rollup():
     </div>
     """
 
-    return send_email(TALENT_TEAM_EMAIL, subject, html_body)
+    return send_email(TALENT_TEAM_EMAIL, subject, html_body, cc_emails=[CPO_EMAIL])
 
 
 @app.route('/api/weekly-rollup', methods=['POST'])
