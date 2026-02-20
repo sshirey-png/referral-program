@@ -52,7 +52,8 @@ ADMIN_USERS = [
     'talent@firstlineschools.org',
     'hr@firstlineschools.org',
     'awatts@firstlineschools.org',
-    'jlombas@firstlineschools.org'
+    'jlombas@firstlineschools.org',
+    'aleibfritz@firstlineschools.org'
 ]
 
 # Status values and their display order
@@ -277,12 +278,11 @@ def send_status_update(referral, old_status, new_status, updated_by):
 
 
 def send_eligible_payout_alert(referral):
-    """Send alert to HR, Talent, and Payroll when a referral becomes eligible for payout."""
-    payout_recipients = [
-        'hr@firstlineschools.org',
-        'talent@firstlineschools.org',
-        'payroll@firstlineschools.org'
-    ]
+    """Send alert to HR, Talent, and Payroll Manager when a referral becomes eligible for payout."""
+    PAYROLL_MANAGER_EMAIL = 'aleibfritz@firstlineschools.org'
+    PAYROLL_EMAIL = 'payroll@firstlineschools.org'
+    APP_URL = 'https://staff-referral-program-965913991496.us-central1.run.app'
+
     subject = f"Referral Bonus Ready for Payout: {referral['candidate_name']} - ${referral['bonus_amount']}"
     html_body = f"""
     <div style="font-family: 'Open Sans', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -314,15 +314,22 @@ def send_eligible_payout_alert(referral):
                 <p style="margin: 5px 0 0 0;"><strong>Scheduled Payout:</strong> {referral.get('payout_month', 'N/A')}</p>
             </div>
 
-            <p>Please process this payout and update the status to "Paid" in the Staff Referral Program admin portal once complete.</p>
+            <p>Once the payout has been processed, please update the status to <strong>"Paid"</strong> using the link below:</p>
+
+            <p style="text-align: center; margin: 25px 0;">
+                <a href="{APP_URL}/?admin=true"
+                   style="background: #22c55e; color: white; padding: 14px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 1.1em;">
+                    Update Status to Paid
+                </a>
+            </p>
         </div>
         <div style="background-color: #002f60; padding: 15px; text-align: center;">
             <p style="color: white; margin: 0; font-size: 0.9em;">FirstLine Schools - Education For Life</p>
         </div>
     </div>
     """
-    for recipient in payout_recipients:
-        send_email(recipient, subject, html_body)
+    # Send directly to Payroll Manager, CC HR and Talent
+    send_email(PAYROLL_MANAGER_EMAIL, subject, html_body, cc_emails=[PAYROLL_EMAIL, HR_EMAIL, TALENT_TEAM_EMAIL])
 
 
 # ============ BigQuery Functions ============
@@ -1066,7 +1073,9 @@ def send_weekly_rollup():
     </div>
     """
 
-    return send_email(TALENT_TEAM_EMAIL, subject, html_body, cc_emails=[CPO_EMAIL])
+    PAYROLL_MANAGER_EMAIL = 'aleibfritz@firstlineschools.org'
+    PAYROLL_EMAIL = 'payroll@firstlineschools.org'
+    return send_email(TALENT_TEAM_EMAIL, subject, html_body, cc_emails=[CPO_EMAIL, PAYROLL_MANAGER_EMAIL, PAYROLL_EMAIL])
 
 
 @app.route('/api/weekly-rollup', methods=['POST'])
