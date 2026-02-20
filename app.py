@@ -228,7 +228,7 @@ def send_status_update(referral, old_status, new_status, updated_by):
         'Interviewing': f"{referral['candidate_name']} is now in the interview process!",
         'Hired': f"Great news! {referral['candidate_name']} has been hired! Your ${referral['bonus_amount']} bonus will be paid after they complete 60 days.",
         'Eligible': f"Your referral bonus of ${referral['bonus_amount']} is now eligible for payout! It will be processed soon.",
-        'Paid': f"Your ${referral['bonus_amount']} referral bonus has been paid! Thank you for helping us build a great team.",
+        'Paid': f"Your ${referral['bonus_amount']} referral bonus has been added to payroll and is being processed. Thank you for helping us build a great team!",
         'Not Hired': f"Unfortunately, {referral['candidate_name']} was not selected for this position. Thank you for your referral.",
         'Withdrawn/Non-responsive': f"{referral['candidate_name']} has withdrawn or is no longer responsive. Thank you for your referral.",
         'Candidate Left before 60 Days': f"Unfortunately, {referral['candidate_name']} left before completing 60 days. The referral bonus is no longer eligible.",
@@ -256,7 +256,7 @@ def send_status_update(referral, old_status, new_status, updated_by):
 
             <div style="background-color: white; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
                 <p style="margin: 0 0 10px 0;">Your referral for <strong>{referral['candidate_name']}</strong></p>
-                <p style="font-size: 1.5em; color: {status_color}; margin: 0; font-weight: bold;">{new_status}</p>
+                <p style="font-size: 1.5em; color: {status_color}; margin: 0; font-weight: bold;">{'Processing' if new_status == 'Paid' else new_status}</p>
             </div>
 
             <p>{message}</p>
