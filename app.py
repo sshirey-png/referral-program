@@ -45,15 +45,19 @@ TALENT_TEAM_EMAIL = 'talent@firstlineschools.org'
 HR_EMAIL = 'hr@firstlineschools.org'
 CPO_EMAIL = 'sshirey@firstlineschools.org'  # CC on new referrals and weekly updates
 
-# Admin users who can access the admin panel
-ADMIN_USERS = [
-    'sshirey@firstlineschools.org',
-    'brichardson@firstlineschools.org',
+# Admin access by job title (from BigQuery staff_master_list_with_function)
+REFERRAL_ADMIN_TITLES = [
+    'Chief People Officer',
+    'Chief HR Officer',
+    'Talent Operations Manager',
+    'Recruitment Manager',
+    'Manager Payroll',
+]
+
+# Team inbox exceptions — shared accounts without BigQuery profiles
+REFERRAL_ADMIN_EXCEPTIONS = [
     'talent@firstlineschools.org',
     'hr@firstlineschools.org',
-    'awatts@firstlineschools.org',
-    'jlombas@firstlineschools.org',
-    'aleibfritz@firstlineschools.org'
 ]
 
 # Status values and their display order
@@ -510,6 +514,42 @@ def update_referral(referral_id, updates):
         return False
 
 
+def get_user_job_title(email):
+    """Look up a user's job title from BigQuery. Called once at login."""
+    if not email:
+        return ''
+    try:
+        query = """
+        SELECT Job_Title
+        FROM `talent-demo-482004.talent_grow_observations.staff_master_list_with_function`
+        WHERE LOWER(Email_Address) = LOWER(@email)
+        AND Employment_Status IN ('Active', 'Leave of absence')
+        LIMIT 1
+        """
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[bigquery.ScalarQueryParameter("email", "STRING", email)]
+        )
+        results = list(bq_client.query(query, job_config=job_config).result())
+        if results:
+            return results[0].Job_Title or ''
+        return ''
+    except Exception as e:
+        logger.error(f"Error looking up job title for {email}: {e}")
+        return ''
+
+
+def is_referral_admin(email):
+    """Check if user has referral admin access (by title or team inbox exception)."""
+    if not email:
+        return False
+    # Team inbox exceptions (shared accounts without BigQuery profiles)
+    if email.lower() in [e.lower() for e in REFERRAL_ADMIN_EXCEPTIONS]:
+        return True
+    # Check job title from session
+    job_title = session.get('user', {}).get('job_title', '')
+    return job_title in REFERRAL_ADMIN_TITLES
+
+
 def require_admin(f):
     """Decorator to require admin authentication."""
     @wraps(f)
@@ -517,7 +557,7 @@ def require_admin(f):
         user = session.get('user')
         if not user:
             return jsonify({'error': 'Authentication required'}), 401
-        if user.get('email', '').lower() not in [e.lower() for e in ADMIN_USERS]:
+        if not is_referral_admin(user.get('email', '')):
             return jsonify({'error': 'Admin access required'}), 403
         return f(*args, **kwargs)
     return decorated_function
@@ -685,10 +725,13 @@ def auth_callback():
         user_info = token.get('userinfo')
 
         if user_info:
+            email = user_info.get('email', '')
+            job_title = get_user_job_title(email)
             session['user'] = {
-                'email': user_info.get('email'),
+                'email': email,
                 'name': user_info.get('name'),
-                'picture': user_info.get('picture')
+                'picture': user_info.get('picture'),
+                'job_title': job_title,
             }
 
         # Redirect back to the app with admin view
@@ -710,10 +753,9 @@ def auth_status():
     """Check authentication status."""
     user = session.get('user')
     if user:
-        is_admin = user.get('email', '').lower() in [e.lower() for e in ADMIN_USERS]
         return jsonify({
             'authenticated': True,
-            'is_admin': is_admin,
+            'is_admin': is_referral_admin(user.get('email', '')),
             'user': user
         })
     return jsonify({'authenticated': False, 'is_admin': False})
