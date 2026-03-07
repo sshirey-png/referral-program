@@ -147,7 +147,33 @@
                     Refer them and earn a bonus when they're hired and complete 60 days!
                 </p>
 
-                <!-- Bonus Cards -->
+                <!-- SPED Referral Boost Banner (auto-hides after June 1, 2026) -->
+                <div id="spedBoostBanner" class="mb-8 rounded-xl overflow-hidden shadow-lg border-2 border-fls-orange" style="display: none;">
+                    <div class="bg-gradient-to-r from-fls-navy to-fls-blue p-6 text-center">
+                        <div class="flex items-center justify-center gap-2 mb-2">
+                            <span class="text-2xl font-bold text-white">SPED Referral Boost</span>
+                            <span class="bg-fls-orange text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Limited Time</span>
+                        </div>
+                        <p class="text-blue-200 text-sm mb-4">Boosted bonuses for Special Education positions for the '26-'27 School Year</p>
+                        <div class="flex flex-col sm:flex-row justify-center gap-4 mb-4">
+                            <div class="bg-white bg-opacity-15 rounded-lg px-6 py-4 backdrop-blur">
+                                <div class="text-sm text-blue-200 mb-1">SPED Lead Teacher</div>
+                                <div class="text-4xl font-bold text-fls-orange">$750</div>
+                                <div class="text-xs text-blue-200 mt-1">was $500</div>
+                            </div>
+                            <div class="bg-white bg-opacity-15 rounded-lg px-6 py-4 backdrop-blur">
+                                <div class="text-sm text-blue-200 mb-1">Other SPED Positions</div>
+                                <div class="text-4xl font-bold text-fls-orange">$500</div>
+                                <div class="text-xs text-blue-200 mt-1">was $300</div>
+                            </div>
+                        </div>
+                        <span class="inline-block bg-fls-orange bg-opacity-20 text-orange-200 text-sm font-medium px-4 py-1.5 rounded-full border border-fls-orange border-opacity-40">
+                            Referrals must be submitted by June 1, 2026
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Bonus Cards (standard rates) -->
                 <div class="flex flex-col sm:flex-row justify-center gap-6 mb-8">
                     <div class="bg-fls-light-blue border-2 border-fls-navy rounded-xl p-6 text-center w-full sm:w-64">
                         <div class="text-lg font-semibold text-fls-navy mb-2">Lead Teacher Positions</div>
@@ -275,13 +301,27 @@
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Position Type *</label>
-                                <div class="flex gap-6">
-                                    <label class="flex items-center gap-2 cursor-pointer">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <!-- SPED Boost options (auto-hide after June 1, 2026) -->
+                                    <label class="sped-boost-option flex items-center gap-2 cursor-pointer bg-gradient-to-r from-fls-navy to-fls-blue text-white rounded-lg px-4 py-3" style="display: none;">
+                                        <input type="radio" name="position_type" value="SPED Lead Teacher" required
+                                            class="w-4 h-4 text-fls-orange focus:ring-fls-orange">
+                                        <span class="font-medium">SPED Lead Teacher ($750 bonus)</span>
+                                        <span class="ml-auto bg-fls-orange text-white text-xs font-bold px-2 py-0.5 rounded-full">BOOST</span>
+                                    </label>
+                                    <label class="sped-boost-option flex items-center gap-2 cursor-pointer bg-gradient-to-r from-fls-navy to-fls-blue text-white rounded-lg px-4 py-3" style="display: none;">
+                                        <input type="radio" name="position_type" value="SPED Other" required
+                                            class="w-4 h-4 text-fls-orange focus:ring-fls-orange">
+                                        <span class="font-medium">SPED Other Position ($500 bonus)</span>
+                                        <span class="ml-auto bg-fls-orange text-white text-xs font-bold px-2 py-0.5 rounded-full">BOOST</span>
+                                    </label>
+                                    <!-- Standard options -->
+                                    <label class="flex items-center gap-2 cursor-pointer border rounded-lg px-4 py-3 hover:bg-gray-50">
                                         <input type="radio" name="position_type" value="Lead Teacher" required
                                             class="w-4 h-4 text-fls-orange focus:ring-fls-orange">
                                         <span>Lead Teacher ($500 bonus)</span>
                                     </label>
-                                    <label class="flex items-center gap-2 cursor-pointer">
+                                    <label class="flex items-center gap-2 cursor-pointer border rounded-lg px-4 py-3 hover:bg-gray-50">
                                         <input type="radio" name="position_type" value="Other" required
                                             class="w-4 h-4 text-fls-orange focus:ring-fls-orange">
                                         <span>Other Position ($300 bonus)</span>
@@ -412,7 +452,7 @@
             </div>
 
             <!-- Stats Cards -->
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
                 <div class="bg-white rounded-xl shadow p-4">
                     <div class="text-3xl font-bold text-fls-navy" id="statTotal">0</div>
                     <div class="text-sm text-gray-600">Total Referrals</div>
@@ -432,6 +472,11 @@
                 <div class="bg-white rounded-xl shadow p-4">
                     <div class="text-3xl font-bold text-fls-orange" id="statBonusesPending">$0</div>
                     <div class="text-sm text-gray-600">Bonuses Pending</div>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4 border-2 border-fls-orange">
+                    <div class="text-3xl font-bold text-fls-orange" id="statSpedCount">0</div>
+                    <div class="text-sm text-gray-600">SPED Boost</div>
+                    <div class="text-xs text-fls-orange font-medium" id="statSpedTotal">$0</div>
                 </div>
             </div>
 
@@ -569,6 +614,8 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1">Position Type</label>
                             <select id="editPositionType" onchange="updateBonusAmount()"
                                 class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-fls-orange focus:border-fls-orange">
+                                <option value="SPED Lead Teacher">SPED Lead Teacher ($750)</option>
+                                <option value="SPED Other">SPED Other ($500)</option>
                                 <option value="Lead Teacher">Lead Teacher ($500)</option>
                                 <option value="Other">Other ($300)</option>
                             </select>
@@ -675,6 +722,16 @@
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', async () => {
+            // SPED Referral Boost: show promo elements if before June 1, 2026
+            const spedBoostExpiry = new Date('2026-06-01T00:00:00');
+            if (new Date() < spedBoostExpiry) {
+                const banner = document.getElementById('spedBoostBanner');
+                if (banner) banner.style.display = '';
+                document.querySelectorAll('.sped-boost-option').forEach(el => {
+                    el.style.display = '';
+                });
+            }
+
             await checkAuthStatus();
 
             // Check URL params for admin view
@@ -867,6 +924,8 @@
                 document.getElementById('statProgress').textContent = stats.in_progress;
                 document.getElementById('statBonusesPaid').textContent = '$' + stats.bonuses_paid;
                 document.getElementById('statBonusesPending').textContent = '$' + stats.bonuses_pending;
+                document.getElementById('statSpedCount').textContent = stats.sped_count || 0;
+                document.getElementById('statSpedTotal').textContent = '$' + (stats.sped_bonus_total || 0);
 
                 // Store referrals
                 allReferrals = referralsData.referrals;
@@ -957,7 +1016,7 @@
                             <div class="font-medium">${escapeHtml(ref.candidate_name)}${archivedBadge}</div>
                             <div class="text-xs text-gray-500">${escapeHtml(ref.candidate_email)}</div>
                         </td>
-                        <td class="px-4 py-3 text-sm">${escapeHtml(ref.position)}</td>
+                        <td class="px-4 py-3 text-sm">${escapeHtml(ref.position)}${ref.position_type && ref.position_type.startsWith('SPED ') ? ' <span class="ml-1 px-1.5 py-0.5 bg-fls-orange text-white text-xs rounded font-medium">SPED Boost</span>' : ''}</td>
                         <td class="px-4 py-3 font-semibold">$${ref.bonus_amount}</td>
                         <td class="px-4 py-3">
                             <span class="px-2 py-1 rounded-full text-xs font-medium ${statusClass}">${escapeHtml(ref.status)}</span>
@@ -1113,8 +1172,13 @@
         // Update bonus amount when position type changes
         function updateBonusAmount() {
             const positionType = document.getElementById('editPositionType').value;
-            const bonusAmount = positionType === 'Lead Teacher' ? 500 : 300;
-            document.getElementById('editBonusAmount').value = bonusAmount;
+            const bonusMap = {
+                'SPED Lead Teacher': 750,
+                'SPED Other': 500,
+                'Lead Teacher': 500,
+                'Other': 300
+            };
+            document.getElementById('editBonusAmount').value = bonusMap[positionType] || 300;
         }
 
         // Utility functions

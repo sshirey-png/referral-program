@@ -594,7 +594,25 @@ def submit_referral():
         submitted_at = datetime.now().isoformat()
 
         # Determine bonus amount
-        bonus_amount = 500 if data.get('position_type') == 'Lead Teacher' else 300
+        # SPED Referral Boost: boosted rates through June 1, 2026
+        position_type = data.get('position_type', 'Other')
+        sped_boost_active = datetime.now() < datetime(2026, 6, 1)
+
+        bonus_map = {
+            'Lead Teacher': 500,
+            'Other': 300,
+        }
+        if sped_boost_active:
+            bonus_map['SPED Lead Teacher'] = 750
+            bonus_map['SPED Other'] = 500
+
+        # If SPED type submitted after promo ends, treat as standard equivalent
+        if not sped_boost_active and position_type.startswith('SPED '):
+            position_type = position_type.replace('SPED ', '')
+
+        bonus_amount = bonus_map.get(position_type, 300)
+        # Store original position_type (preserves SPED designation for admin visibility)
+        data['position_type'] = position_type
 
         # Build referral record
         referral = {
@@ -947,6 +965,11 @@ def get_stats():
 
     not_hired = len([r for r in referrals if r.get('status') in ['Not Hired', 'Candidate Left before 60 Days', 'Ineligible']])
 
+    # SPED Boost stats
+    sped_referrals = [r for r in referrals if r.get('position_type', '').startswith('SPED ')]
+    sped_count = len(sped_referrals)
+    sped_bonus_total = sum(int(r.get('bonus_amount', 0) or 0) for r in sped_referrals)
+
     return jsonify({
         'total': total,
         'pending_review': pending_review,
@@ -955,7 +978,9 @@ def get_stats():
         'paid_count': paid_count,
         'bonuses_paid': bonuses_paid,
         'bonuses_pending': bonuses_pending,
-        'not_hired': not_hired
+        'not_hired': not_hired,
+        'sped_count': sped_count,
+        'sped_bonus_total': sped_bonus_total
     })
 
 
