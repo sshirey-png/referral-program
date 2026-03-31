@@ -107,7 +107,10 @@ if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
         client_id=GOOGLE_CLIENT_ID,
         client_secret=GOOGLE_CLIENT_SECRET,
         server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-        client_kwargs={'scope': 'openid email profile'}
+        client_kwargs={
+            'scope': 'openid email profile',
+            'hd': 'firstlineschools.org',
+        }
     )
 else:
     google = None
@@ -538,6 +541,32 @@ def get_user_job_title(email):
         return ''
 
 
+def _lookup_staff(email):
+    """Look up staff location from BigQuery by email."""
+    if not email:
+        return None
+    try:
+        query = """
+        SELECT Location_Name
+        FROM `talent-demo-482004.talent_grow_observations.staff_master_list_with_function`
+        WHERE LOWER(Email_Address) = LOWER(@email)
+        AND Employment_Status IN ('Active', 'Leave of absence')
+        LIMIT 1
+        """
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[bigquery.ScalarQueryParameter("email", "STRING", email)]
+        )
+        results = list(bq_client.query(query, job_config=job_config).result())
+        if results:
+            return {
+                'school': results[0].Location_Name or '',
+            }
+        return None
+    except Exception as e:
+        logger.error(f"Error looking up staff for {email}: {e}")
+        return None
+
+
 def is_referral_admin(email):
     """Check if user has referral admin access (by title or team inbox exception)."""
     if not email:
@@ -576,9 +605,19 @@ def index():
 
 @app.route('/api/referrals', methods=['POST'])
 def submit_referral():
-    """Submit a new referral."""
+    """Submit a new referral. Requires authentication."""
+    # Require login — referrer info comes from session
+    user = session.get('user')
+    if not user:
+        return jsonify({'error': 'You must be logged in with your @firstlineschools.org account to submit a referral.'}), 401
+
     try:
         data = request.json
+
+        # Override referrer fields from session (prevents typos / spoofing)
+        data['referrer_email'] = user.get('email', '')
+        data['referrer_name'] = user.get('name', '')
+        data['referrer_school'] = user.get('school', '') or data.get('referrer_school', '')
 
         # Validate required fields
         required_fields = ['referrer_name', 'referrer_email', 'referrer_school',
@@ -746,15 +785,26 @@ def auth_callback():
 
         if user_info:
             email = user_info.get('email', '')
+
+            # Verify FirstLine domain
+            if not email.lower().endswith('@firstlineschools.org'):
+                logger.warning(f"Non-FirstLine login attempt: {email}")
+                return redirect('/?error=wrong_account')
+
             job_title = get_user_job_title(email)
+
+            # Look up staff info for auto-fill
+            staff_info = _lookup_staff(email)
+
             session['user'] = {
                 'email': email,
                 'name': user_info.get('name'),
                 'picture': user_info.get('picture'),
                 'job_title': job_title,
+                'school': staff_info.get('school', '') if staff_info else '',
             }
 
-        # Redirect back to the app with admin view
+        # Redirect back to the app with admin view if admin
         return redirect('/?admin=true')
     except Exception as e:
         logger.error(f"OAuth error: {e}")
