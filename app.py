@@ -937,6 +937,81 @@ def delete_referral(referral_id):
         return jsonify({'error': 'Server error'}), 500
 
 
+@app.route('/api/admin/referrals/bulk-status', methods=['POST'])
+@require_admin
+def bulk_update_status():
+    """Update status on multiple referrals. Sends status-update emails + Eligible payout alerts."""
+    try:
+        data = request.json or {}
+        referral_ids = data.get('referral_ids') or []
+        new_status = data.get('status')
+        if not referral_ids or not isinstance(referral_ids, list):
+            return jsonify({'error': 'referral_ids required'}), 400
+        if new_status not in STATUS_VALUES:
+            return jsonify({'error': 'Invalid status'}), 400
+
+        user = session.get('user', {})
+        updated_by = user.get('email', 'Unknown')
+        results = {'updated': 0, 'skipped': 0, 'errors': []}
+
+        for rid in referral_ids:
+            try:
+                current = get_referral_by_id(rid)
+                if not current:
+                    results['skipped'] += 1
+                    continue
+                old_status = current.get('status')
+                updates = {
+                    'status': new_status,
+                    'status_updated_at': datetime.now().isoformat(),
+                    'status_updated_by': updated_by,
+                }
+                if update_referral(rid, updates):
+                    results['updated'] += 1
+                    if old_status and old_status != new_status:
+                        send_status_update(current, old_status, new_status, updated_by)
+                        if new_status == 'Eligible':
+                            send_eligible_payout_alert(current)
+                else:
+                    results['errors'].append(rid)
+            except Exception as inner:
+                logger.error(f"Bulk status error for {rid}: {inner}")
+                results['errors'].append(rid)
+
+        return jsonify({'success': True, **results})
+    except Exception as e:
+        logger.error(f"Error in bulk status update: {e}")
+        return jsonify({'error': 'Server error'}), 500
+
+
+@app.route('/api/admin/referrals/bulk-archive', methods=['POST'])
+@require_admin
+def bulk_archive():
+    """Archive or unarchive multiple referrals at once."""
+    try:
+        data = request.json or {}
+        referral_ids = data.get('referral_ids') or []
+        is_archived = bool(data.get('is_archived'))
+        if not referral_ids or not isinstance(referral_ids, list):
+            return jsonify({'error': 'referral_ids required'}), 400
+
+        query = f"""
+        UPDATE `{get_full_table_id()}`
+        SET is_archived = @is_archived
+        WHERE referral_id IN UNNEST(@ids)
+        """
+        job_config = bigquery.QueryJobConfig(query_parameters=[
+            bigquery.ScalarQueryParameter('is_archived', 'BOOL', is_archived),
+            bigquery.ArrayQueryParameter('ids', 'STRING', referral_ids),
+        ])
+        bq_client.query(query, job_config=job_config).result()
+        logger.info(f"Bulk {'archived' if is_archived else 'unarchived'} {len(referral_ids)} referrals")
+        return jsonify({'success': True, 'updated': len(referral_ids)})
+    except Exception as e:
+        logger.error(f"Error in bulk archive: {e}")
+        return jsonify({'error': 'Server error'}), 500
+
+
 @app.route('/api/admin/referrals/<referral_id>/archive', methods=['PATCH'])
 @require_admin
 def archive_referral(referral_id):

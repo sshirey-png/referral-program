@@ -544,6 +544,7 @@
                     <table class="w-full text-sm">
                         <thead class="bg-gray-100">
                             <tr>
+                                <th class="px-3 py-3 w-8"><input type="checkbox" id="selectAllReferrals" onchange="toggleSelectAll(this.checked)" class="cursor-pointer" title="Select all visible"></th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-200" onclick="sortTable('submitted_at')">Date</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-700">Referrer</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-700">Candidate</th>
@@ -737,6 +738,94 @@
         // Global state
         let allReferrals = [];
         let currentSort = { field: 'submitted_at', direction: 'desc' };
+        let selectedReferrals = new Set();
+
+        const BULK_STATUS_OPTIONS = ['Submitted','Under Review','Candidate Applied','Interviewing','Hired','Eligible','Paid','Not Hired','Withdrawn'];
+
+        function toggleSelectAll(checked) {
+            document.querySelectorAll('.bulk-check').forEach(cb => {
+                cb.checked = checked;
+                if (checked) selectedReferrals.add(cb.value);
+                else selectedReferrals.delete(cb.value);
+            });
+            updateBulkBar();
+        }
+
+        function onRowCheckboxChange() {
+            selectedReferrals.clear();
+            document.querySelectorAll('.bulk-check:checked').forEach(cb => selectedReferrals.add(cb.value));
+            const visible = document.querySelectorAll('.bulk-check');
+            const selectAll = document.getElementById('selectAllReferrals');
+            if (selectAll) selectAll.checked = visible.length > 0 && Array.from(visible).every(cb => cb.checked);
+            updateBulkBar();
+        }
+
+        function clearSelection() {
+            selectedReferrals.clear();
+            document.querySelectorAll('.bulk-check').forEach(cb => cb.checked = false);
+            const selectAll = document.getElementById('selectAllReferrals');
+            if (selectAll) selectAll.checked = false;
+            updateBulkBar();
+        }
+
+        function updateBulkBar() {
+            const bar = document.getElementById('bulkActionBar');
+            const count = selectedReferrals.size;
+            if (count === 0) { bar.classList.add('hidden'); return; }
+            bar.classList.remove('hidden');
+            document.getElementById('bulkCount').textContent = `${count} selected`;
+        }
+
+        async function applyBulkStatus() {
+            const status = document.getElementById('bulkStatusSelect').value;
+            if (!status) { alert('Choose a status first'); return; }
+            if (selectedReferrals.size === 0) return;
+            if (!confirm(`Update ${selectedReferrals.size} referral(s) to "${status}"? Status-update emails will be sent.`)) return;
+            const btn = document.getElementById('bulkApplyStatusBtn');
+            btn.disabled = true; btn.textContent = 'Applying…';
+            try {
+                const res = await fetch('/api/admin/referrals/bulk-status', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ referral_ids: Array.from(selectedReferrals), status }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed');
+                alert(`Updated ${data.updated} referral(s). Skipped ${data.skipped}. Errors: ${(data.errors||[]).length}`);
+                clearSelection();
+                await loadAdminData();
+            } catch (e) {
+                alert('Bulk status failed: ' + e.message);
+            } finally {
+                btn.disabled = false; btn.textContent = 'Apply Status';
+            }
+        }
+
+        async function applyBulkArchive(archive) {
+            if (selectedReferrals.size === 0) return;
+            const action = archive ? 'Archive' : 'Unarchive';
+            if (!confirm(`${action} ${selectedReferrals.size} referral(s)?`)) return;
+            const btn = document.getElementById(archive ? 'bulkArchiveBtn' : 'bulkUnarchiveBtn');
+            btn.disabled = true; btn.textContent = action + '…';
+            try {
+                const res = await fetch('/api/admin/referrals/bulk-archive', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ referral_ids: Array.from(selectedReferrals), is_archived: archive }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed');
+                alert(`${action}d ${data.updated} referral(s).`);
+                clearSelection();
+                await loadAdminData();
+            } catch (e) {
+                alert('Bulk archive failed: ' + e.message);
+            } finally {
+                btn.disabled = false; btn.textContent = action;
+            }
+        }
         let isAdmin = false;
 
         // Initialize on page load
@@ -1037,7 +1126,8 @@
                 const archivedBadge = ref.is_archived ? ' <span class="ml-1 px-1.5 py-0.5 bg-gray-200 text-gray-500 text-xs rounded">Archived</span>' : '';
 
                 tbody.innerHTML += `
-                    <tr class="border-b hover:bg-gray-50 ${archivedClass}">
+                    <tr class="border-b hover:bg-gray-50 ${archivedClass}" data-referral-id="${escapeHtml(ref.referral_id)}">
+                        <td class="px-3 py-3 w-8"><input type="checkbox" class="bulk-check cursor-pointer" value="${escapeHtml(ref.referral_id)}" onchange="onRowCheckboxChange()" ${selectedReferrals.has(ref.referral_id) ? 'checked' : ''}></td>
                         <td class="px-4 py-3 text-sm">${date}</td>
                         <td class="px-4 py-3">
                             <div class="font-medium">${escapeHtml(ref.referrer_name)}</div>
@@ -1251,5 +1341,31 @@
             }
         });
     </script>
+
+    <!-- Bulk Action Bar -->
+    <div id="bulkActionBar" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-white border border-gray-200 rounded-xl shadow-2xl px-4 py-3 flex items-center gap-3 flex-wrap max-w-[95vw]">
+        <span id="bulkCount" class="text-sm font-semibold text-fls-navy">0 selected</span>
+        <span class="text-gray-300">|</span>
+        <select id="bulkStatusSelect" class="px-3 py-2 border border-gray-200 rounded-lg text-sm">
+            <option value="">Change status to…</option>
+            <option>Submitted</option>
+            <option>Under Review</option>
+            <option>Candidate Applied</option>
+            <option>Interviewing</option>
+            <option>Hired</option>
+            <option>Eligible</option>
+            <option>Paid</option>
+            <option>Not Hired</option>
+            <option>Withdrawn/Non-responsive</option>
+            <option>Candidate Left before 60 Days</option>
+            <option>Ineligible</option>
+        </select>
+        <button id="bulkApplyStatusBtn" onclick="applyBulkStatus()" class="px-3 py-2 bg-fls-navy hover:bg-blue-800 text-white rounded-lg text-sm font-semibold">Apply Status</button>
+        <span class="text-gray-300">|</span>
+        <button id="bulkArchiveBtn" onclick="applyBulkArchive(true)" class="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold">Archive</button>
+        <button id="bulkUnarchiveBtn" onclick="applyBulkArchive(false)" class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold">Unarchive</button>
+        <span class="text-gray-300">|</span>
+        <button onclick="clearSelection()" class="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm">Clear</button>
+    </div>
 </body>
 </html>
