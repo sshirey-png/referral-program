@@ -312,7 +312,7 @@ def send_eligible_payout_alert(referral):
                 <h3 style="color: #002f60; margin-top: 0;">Hired Candidate</h3>
                 <p style="margin: 5px 0;"><strong>Name:</strong> {referral['candidate_name']}</p>
                 <p style="margin: 5px 0;"><strong>Position:</strong> {referral['position']}</p>
-                <p style="margin: 5px 0;"><strong>Hire Date:</strong> {referral.get('hire_date', 'N/A')}</p>
+                <p style="margin: 5px 0;"><strong>Start Date:</strong> {referral.get('start_date', 'N/A')}</p>
                 <p style="margin: 5px 0;"><strong>60-Day Completion:</strong> {referral.get('sixty_day_date', 'N/A')}</p>
             </div>
 
@@ -367,7 +367,7 @@ def row_to_dict(row):
         'status': row.status or '',
         'status_updated_at': row.status_updated_at.isoformat() if row.status_updated_at else '',
         'status_updated_by': row.status_updated_by or '',
-        'hire_date': row.hire_date.isoformat() if row.hire_date else '',
+        'start_date': row.start_date.isoformat() if row.start_date else '',
         'sixty_day_date': row.sixty_day_date.isoformat() if row.sixty_day_date else '',
         'payout_month': row.payout_month or '',
         'paid_date': row.paid_date.isoformat() if row.paid_date else '',
@@ -420,13 +420,13 @@ def append_referral(referral_data):
             referral_id, submitted_at, referrer_name, referrer_email, referrer_school,
             candidate_name, candidate_email, candidate_phone, position, position_type,
             role_fit, bonus_amount, relationship, already_applied, notes, status,
-            status_updated_at, status_updated_by, hire_date, sixty_day_date,
+            status_updated_at, status_updated_by, start_date, sixty_day_date,
             payout_month, paid_date, admin_notes
         ) VALUES (
             @referral_id, @submitted_at, @referrer_name, @referrer_email, @referrer_school,
             @candidate_name, @candidate_email, @candidate_phone, @position, @position_type,
             @role_fit, @bonus_amount, @relationship, @already_applied, @notes, @status,
-            @status_updated_at, @status_updated_by, @hire_date, @sixty_day_date,
+            @status_updated_at, @status_updated_by, @start_date, @sixty_day_date,
             @payout_month, @paid_date, @admin_notes
         )
         """
@@ -434,7 +434,7 @@ def append_referral(referral_data):
         # Parse dates
         submitted_at = datetime.fromisoformat(referral_data['submitted_at']) if referral_data.get('submitted_at') else datetime.now()
         status_updated_at = datetime.fromisoformat(referral_data['status_updated_at']) if referral_data.get('status_updated_at') else datetime.now()
-        hire_date = referral_data.get('hire_date') or None
+        start_date = referral_data.get('start_date') or None
         sixty_day_date = referral_data.get('sixty_day_date') or None
         paid_date = referral_data.get('paid_date') or None
 
@@ -458,7 +458,7 @@ def append_referral(referral_data):
                 bigquery.ScalarQueryParameter("status", "STRING", referral_data.get('status', 'Submitted')),
                 bigquery.ScalarQueryParameter("status_updated_at", "TIMESTAMP", status_updated_at),
                 bigquery.ScalarQueryParameter("status_updated_by", "STRING", referral_data.get('status_updated_by', '')),
-                bigquery.ScalarQueryParameter("hire_date", "DATE", hire_date),
+                bigquery.ScalarQueryParameter("start_date", "DATE", start_date),
                 bigquery.ScalarQueryParameter("sixty_day_date", "DATE", sixty_day_date),
                 bigquery.ScalarQueryParameter("payout_month", "STRING", referral_data.get('payout_month', '')),
                 bigquery.ScalarQueryParameter("paid_date", "DATE", paid_date),
@@ -483,7 +483,7 @@ def update_referral(referral_id, updates):
         for field, value in updates.items():
             param_name = f"param_{field}"
 
-            if field in ['hire_date', 'sixty_day_date', 'paid_date']:
+            if field in ['start_date', 'sixty_day_date', 'paid_date']:
                 if value:
                     set_clauses.append(f"{field} = @{param_name}")
                     params.append(bigquery.ScalarQueryParameter(param_name, "DATE", value))
@@ -673,7 +673,7 @@ def submit_referral():
             'status': 'Submitted',
             'status_updated_at': submitted_at,
             'status_updated_by': 'System',
-            'hire_date': '',
+            'start_date': '',
             'sixty_day_date': '',
             'payout_month': '',
             'paid_date': '',
@@ -866,15 +866,15 @@ def update_referral_status(referral_id):
             updates['status_updated_at'] = datetime.now().isoformat()
             updates['status_updated_by'] = user.get('email', 'Unknown')
 
-        # Handle hire date (calculate 60-day date and payout month)
-        if 'hire_date' in data:
-            hire_date = data['hire_date']
-            updates['hire_date'] = hire_date
+        # Handle start date (calculate 60-day date and payout month)
+        if 'start_date' in data:
+            start_date = data['start_date']
+            updates['start_date'] = start_date
 
-            if hire_date:
+            if start_date:
                 try:
-                    hire_dt = datetime.strptime(hire_date, '%Y-%m-%d')
-                    sixty_day_dt = hire_dt + timedelta(days=60)
+                    start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+                    sixty_day_dt = start_dt + timedelta(days=60)
                     updates['sixty_day_date'] = sixty_day_dt.strftime('%Y-%m-%d')
 
                     # Payout month is the month after 60-day completion

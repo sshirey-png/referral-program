@@ -25,7 +25,7 @@ A web application for FirstLine Schools staff to submit referrals and track thei
 2. Rename the first sheet to "Referrals"
 3. Add headers in row 1:
    ```
-   referral_id | submitted_at | referrer_name | referrer_email | referrer_school | candidate_name | candidate_email | candidate_phone | position | position_type | bonus_amount | relationship | already_applied | notes | status | status_updated_at | status_updated_by | hire_date | sixty_day_date | payout_month | paid_date | admin_notes
+   referral_id | submitted_at | referrer_name | referrer_email | referrer_school | candidate_name | candidate_email | candidate_phone | position | position_type | bonus_amount | relationship | already_applied | notes | status | status_updated_at | status_updated_by | start_date | sixty_day_date | payout_month | paid_date | admin_notes
    ```
 4. Note the Sheet ID from the URL: `https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit`
 
